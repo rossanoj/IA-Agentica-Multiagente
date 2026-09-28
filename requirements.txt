@@ -1,0 +1,12 @@
+virtualenv
+jupyter
+ipykernel
+nbformat
+numpy
+pandas
+matplotlib
+gradio
+fastmcp
+pydantic
+chromadb
+huggingface_hub
