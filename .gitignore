@@ -61,9 +61,10 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# ChromaDB local vector store
+# Recursos y bases generados localmente
+data/synthetic-recipe-images.zip
 datadb/
-localdb/
+recipe_images/
 
 # Flask stuff:
 instance/

@@ -78,11 +78,20 @@ $env:HF_TOKEN.Substring(0, 4) + "..."
 
 No incluyas el token en el codigo, en archivos versionados ni en la URL del remoto.
 
-### Base vectorial local con ChromaDB
+### Preparacion local y base vectorial con ChromaDB
 
-La base vectorial local para el sistema RAG se guarda en la carpeta `localdb`.
-Esta carpeta esta excluida de Git porque contiene datos generados localmente y
-debe crearse de nuevo en cada entorno.
+Antes de ejecutar cualquier otro notebook, ejecuta completo
+`00_configurar_proyecto_y_base_vectorial.ipynb` desde la raiz del repositorio.
+El notebook crea las carpetas `data`, `recipe_images` y `datadb` directamente
+en esa raiz. Estas carpetas contienen recursos y datos generados localmente,
+por lo que estan excluidas de Git y deben crearse de nuevo en cada entorno.
+
+Obtén del material original del curso/proyecto y coloca en la raiz del
+repositorio, o directamente en `data/`, los archivos de entrada:
+
+- `structured_restaurant_data.json`
+- `augmented_food_recipe.json`
+- `synthetic-recipe-images.zip` (opcional; el notebook lo descarga si falta)
 
 Instala las dependencias del proyecto:
 
@@ -90,20 +99,6 @@ Instala las dependencias del proyecto:
 pip install -r requirements.txt
 ```
 
-Ejecuta esta celda de Python o de un notebook para crear la base y la
-coleccion que usara el sistema RAG:
-
-```python
-from pathlib import Path
-
-import chromadb
-
-db_path = Path("localdb")
-db_path.mkdir(exist_ok=True)
-
-client = chromadb.PersistentClient(path=str(db_path))
-collection = client.get_or_create_collection(name="documentos")
-```
-
-Despues de crear la coleccion, agrega los documentos y sus embeddings siguiendo
-el flujo de ingesta del notebook. No subas la carpeta `localdb` al repositorio.
+El notebook prepara los documentos, genera los embeddings y persiste las
+colecciones `restaurant_articles` y `food_images` en `datadb`. No subas las
+carpetas `data`, `recipe_images` ni `datadb` al repositorio.
