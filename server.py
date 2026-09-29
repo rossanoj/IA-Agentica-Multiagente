@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import unicodedata
 
 from fastmcp import FastMCP
 
@@ -21,14 +22,60 @@ def load_json(filename: str) -> list[dict]:
         return json.load(file)
 
 
+def load_restaurants() -> list[dict]:
+    records = []
+    seen = set()
+    for filename in ("structured-restaurant-data.json", "structured_restaurant_data.json"):
+        path = DATA_DIR / filename
+        if not path.exists():
+            continue
+        for restaurant in load_json(filename):
+            name = restaurant.get("name", "").strip()
+            key = (name.casefold(), restaurant.get("neighborhood", restaurant.get("location", "")).casefold())
+            if name and key not in seen:
+                seen.add(key)
+                records.append(restaurant)
+    if not records:
+        raise FileNotFoundError(f"No se encontraron datos de restaurantes en {DATA_DIR}")
+    return records
+
+
+def normalize_text(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value.casefold())
+    return "".join(char for char in decomposed if not unicodedata.combining(char)).strip()
+
+
+def restaurant_vibes(restaurant: dict) -> list[str]:
+    vibes = restaurant.get("vibes", restaurant.get("vibe", []))
+    if isinstance(vibes, str):
+        return [vibes]
+    return vibes
+
+
+def restaurant_description(restaurant: dict) -> str:
+    return restaurant.get("description", restaurant.get("environment", ""))
+
+
+VIBE_ALIASES = {
+    "romantico": "romantic",
+    "romantica": "romantic",
+    "familiar": "family",
+    "acogedor": "cozy",
+    "acogedora": "cozy",
+    "tranquilo": "quiet",
+    "tranquila": "quiet",
+}
+
+
 @mcp.tool()
 def get_restaurant_info(restaurant_name: str) -> str:
     """Busca un restaurante por nombre y devuelve sus datos estructurados."""
     query = restaurant_name.lower().strip()
     matches = [
         restaurant
-        for restaurant in load_json("structured-restaurant-data.json")
-        if query in restaurant["name"].lower() or restaurant["name"].lower() in query
+        for restaurant in load_restaurants()
+        if normalize_text(query) in normalize_text(restaurant["name"])
+        or normalize_text(restaurant["name"]) in normalize_text(query)
     ]
     if not matches:
         return json.dumps({
@@ -41,24 +88,25 @@ def get_restaurant_info(restaurant_name: str) -> str:
 @mcp.tool()
 def recommend_by_vibe(vibe: str) -> str:
     """Encuentra restaurantes por ambiente, etiquetas o descripción."""
-    query = vibe.lower().strip()
+    query = normalize_text(vibe)
+    query = VIBE_ALIASES.get(query, query)
     matches = []
-    for restaurant in load_json("structured-restaurant-data.json"):
-        tags = [tag.lower() for tag in restaurant.get("vibes", [])]
-        description = restaurant.get("description", "").lower()
+    for restaurant in load_restaurants():
+        tags = [normalize_text(tag) for tag in restaurant_vibes(restaurant)]
+        description = normalize_text(restaurant_description(restaurant))
         if any(query in tag for tag in tags) or query in description:
             matches.append({
                 "name": restaurant["name"],
-                "neighborhood": restaurant.get("neighborhood"),
-                "cuisine": restaurant.get("cuisine"),
+                "neighborhood": restaurant.get("neighborhood", restaurant.get("location")),
+                "cuisine": restaurant.get("cuisine", restaurant.get("food_style")),
                 "rating": restaurant.get("rating"),
-                "vibes": restaurant.get("vibes", []),
-                "price_range": restaurant.get("price_range"),
+                "vibes": restaurant_vibes(restaurant),
+                "price_range": restaurant.get("price_range", restaurant.get("price")),
             })
     excerpts = [
         paragraph.strip()[:300]
         for paragraph in data_path("California-Culinary-Map.txt").read_text(encoding="utf-8").split("\n\n")
-        if query in paragraph.lower() and paragraph.strip()
+        if query in normalize_text(paragraph) and paragraph.strip()
     ]
     return json.dumps({
         "vibe_searched": vibe,
