@@ -6,11 +6,11 @@ nbformat
 numpy
 pandas
 matplotlib
-gradio
-fastmcp
+gradio==6.17.3
+fastmcp==4.0.10
 pydantic
 chromadb
-huggingface_hub
+huggingface_hub==0.36.2
 
 # LangChain y base vectorial
 langchain>=0.3.27,<0.4.0
