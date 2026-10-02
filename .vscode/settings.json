@@ -1,5 +1,6 @@
 {
     "terminal.integrated.hideOnStartup": "always",
+    "terminal.integrated.enablePersistentSessions": false,
     "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
     "python.analysis.typeCheckingMode": "basic",
     "editor.overtypeControl": false,

@@ -1,18 +1,19 @@
 # IA-Agentica-Multiagente
-Proyecto Final IBM Ingenieria IA - Modelo IA Agentica Multiagente. (Coursera) 
+Proyecto Final IBM Ingenieria IA - Modelo IA Agentica Multiagente. (Coursera)
+Adaptado para usar Qwen
 
-## Configuracion del proyecto
+## Configuracion del proyecto. Recomendacion para el entorno
 
 ### Usuario Git asociado al proyecto
 
-Para definir la identidad de Git solamente para este repositorio, ejecuta estos comandos desde su carpeta:
+Para definir la identidad de Git solamente para este repositorio, se deben ejecutar estos comandos desde su carpeta:
 
 ```bash
 git config --local user.name "Tu nombre"
 git config --local user.email "tu-correo@example.com"
 ```
 
-Comprueba la configuracion con:
+Comprobar la configuracion con:
 
 ```bash
 git config --local --list
@@ -22,22 +23,22 @@ Estos valores se guardan en `.git/config` y no modifican la configuracion global
 
 ### Token de Hugging Face
 
-Crea el token desde la configuracion de acceso de Hugging Face con estas opciones:
+Crear el token desde la configuracion de acceso de Hugging Face con estas opciones:
 
 - Tipo de token: `Fine-grained`.
 - Permiso: habilitar el acceso de inferencia (`Inference` o `Make calls to Inference Providers`, segun la interfaz).
 
-Usa el token generado en los siguientes comandos como `HF_TOKEN`.
+Usar el token generado en los siguientes comandos como `HF_TOKEN`.
 
 ### Token en Linux
 
-Define el token como variable de entorno para la sesion actual:
+Definir el token como variable de entorno para la sesion actual:
 
 ```bash
 export HF_TOKEN="tu-token"
 ```
 
-Para dejarlo disponible en nuevas sesiones de Bash, agrega la misma linea a `~/.bashrc` y recarga la configuracion:
+Para dejarlo disponible en nuevas sesiones de Bash, agregar la misma linea a `~/.bashrc` y recargar la configuracion:
 
 ```bash
 source ~/.bashrc
@@ -45,7 +46,7 @@ source ~/.bashrc
 
 ### Token en Windows
 
-En PowerShell, para la sesion actual:
+En PowerShell, para la sesion actual usar:
 
 ```powershell
 $env:HF_TOKEN = "tu-token"
@@ -64,7 +65,7 @@ set HF_TOKEN=tu-token
 setx HF_TOKEN "tu-token"
 ```
 
-Verifica que la variable este definida sin mostrar el token completo:
+Verificar que la variable este definida sin mostrar el token completo:
 
 ```bash
 echo "${HF_TOKEN:0:4}..."
@@ -76,29 +77,34 @@ En PowerShell:
 $env:HF_TOKEN.Substring(0, 4) + "..."
 ```
 
-No incluyas el token en el codigo, en archivos versionados ni en la URL del remoto.
+¡¡¡RECOMENDACION!!!
+No incluir el token en el codigo, en archivos versionados ni en la URL del remoto.
 
 ### Preparacion local y base vectorial con ChromaDB
 
-Antes de ejecutar cualquier otro notebook, ejecuta completo
-`00_configurar_proyecto_y_base_vectorial.ipynb` desde la raiz del repositorio.
-El notebook crea las carpetas `data`, `recipe_images` y `datadb` directamente
-en esa raiz. Estas carpetas contienen recursos y datos generados localmente,
-por lo que estan excluidas de Git y deben crearse de nuevo en cada entorno.
-
-Obtén del material original del curso/proyecto y coloca en la raiz del
-repositorio, o directamente en `data/`, los archivos de entrada:
-
-- `structured_restaurant_data.json`
-- `augmented_food_recipe.json`
-- `synthetic-recipe-images.zip` (opcional; el notebook lo descarga si falta)
-
-Instala las dependencias del proyecto:
+Instalar las dependencias del proyecto:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
+Antes de ejecutar cualquier otro notebook, ejecutar completo
+`00_configurar_proyecto_y_base_vectorial.ipynb` desde la raiz del repositorio.
+El notebook crea las carpetas `data`, `recipe_images` y `datadb` directamente
+en esa raiz. Estas carpetas contienen recursos y datos generados localmente,
+por lo que estan excluidas de Git y deben crearse de nuevo en cada entorno.
+
+El material original del curso/proyecto esta incluido en el repositorio y coloca en la raiz del
+proyecto (en `data/`), los archivos de entrada:
+
+- `structured_restaurant_data.json`
+- `augmented_food_recipe.json`
+- `synthetic-recipe-images.zip` (opcional; el notebook lo descarga si falta)
+- `structured-restaurant-data.json`
+- `augmented-user-review.json`
+- `California-Culinary-Map.txt`
+
 El notebook prepara los documentos, genera los embeddings y persiste las
-colecciones `restaurant_articles` y `food_images` en `datadb`. No subas las
-carpetas `data`, `recipe_images` ni `datadb` al repositorio.
+colecciones `restaurant_articles` y `food_images` en `datadb`. El archivo 
+data/synthetic-recipe-images.zipLas y las carpetas `recipe_images` y `datadb`
+estan excluidas para no ser subidas al repositorio.

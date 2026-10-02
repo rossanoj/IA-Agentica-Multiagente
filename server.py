@@ -8,6 +8,7 @@ mcp = FastMCP("Connoisseur-Server")
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
+DB_DIR = BASE_DIR / "datadb"
 
 
 def data_path(filename: str) -> Path:
@@ -54,6 +55,38 @@ def restaurant_vibes(restaurant: dict) -> list[str]:
 
 def restaurant_description(restaurant: dict) -> str:
     return restaurant.get("description", restaurant.get("environment", ""))
+
+
+def _restaurant_article_collection():
+    if not DB_DIR.exists():
+        raise FileNotFoundError(
+            f"No se encontró la base vectorial en {DB_DIR}. "
+            "Ejecuta 00_configurar_proyecto_y_base_vectorial.ipynb primero."
+        )
+    try:
+        from langchain_chroma import Chroma
+    except ImportError as error:
+        raise RuntimeError(
+            "Falta langchain-chroma. Instala las dependencias de requirements.txt."
+        ) from error
+    return Chroma(
+        collection_name="restaurant_articles",
+        persist_directory=str(DB_DIR),
+    )._collection
+
+
+def _embed_query(query: str) -> list[float]:
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError as error:
+        raise RuntimeError(
+            "Falta sentence-transformers. Instala las dependencias de requirements.txt."
+        ) from error
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    return model.encode(
+        [query],
+        normalize_embeddings=True,
+    )[0].astype("float32").tolist()
 
 
 VIBE_ALIASES = {
@@ -112,6 +145,68 @@ def recommend_by_vibe(vibe: str) -> str:
         "vibe_searched": vibe,
         "structured_matches": matches,
         "raw_text_excerpts": excerpts[:5],
+    }, indent=2)
+
+
+@mcp.tool()
+def search_restaurants_rag(
+    query: str,
+    k: int = 5,
+    cuisine: str | None = None,
+    location: str | None = None,
+) -> str:
+    """Busca restaurantes relacionados semánticamente en la colección RAG local."""
+    if not query.strip():
+        return json.dumps({
+            "status": "invalid_query",
+            "message": "La consulta RAG no puede estar vacía.",
+        }, indent=2)
+    if k < 1 or k > 20:
+        return json.dumps({
+            "status": "invalid_k",
+            "message": "k debe estar entre 1 y 20.",
+        }, indent=2)
+
+    where_parts = []
+    if cuisine:
+        where_parts.append({"cuisine": cuisine})
+    if location:
+        where_parts.append({"location": location})
+    where = None
+    if len(where_parts) == 1:
+        where = where_parts[0]
+    elif len(where_parts) > 1:
+        where = {"$and": where_parts}
+
+    collection = _restaurant_article_collection()
+    if collection.count() == 0:
+        return json.dumps({
+            "status": "empty_index",
+            "message": "La colección restaurant_articles no contiene documentos.",
+        }, indent=2)
+
+    results = collection.query(
+        query_embeddings=[_embed_query(query)],
+        n_results=k,
+        where=where,
+        include=["documents", "metadatas", "distances"],
+    )
+    documents = results.get("documents", [[]])[0]
+    metadatas = results.get("metadatas", [[]])[0]
+    distances = results.get("distances", [[]])[0]
+    matches = [
+        {
+            "document": document,
+            "metadata": metadata,
+            "distance": distance,
+        }
+        for document, metadata, distance in zip(documents, metadatas, distances)
+    ]
+    return json.dumps({
+        "status": "ok",
+        "query": query,
+        "count": len(matches),
+        "results": matches,
     }, indent=2)
 
 
